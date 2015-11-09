@@ -1,14 +1,14 @@
 " @Author:      Tom Link (micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2015-10-25
-" @Revision:    48
-" GetLatestVimScripts: 0 0 :AutoInstall: ttodo.vim
+" @Last Change: 2015-11-09
+" @Revision:    61
+" GetLatestVimScripts: 5262 0 :AutoInstall: ttodo.vim
 
 if &cp || exists("loaded_ttodo")
     finish
 endif
-let loaded_ttodo = 1
+let loaded_ttodo = 2
 
 let s:save_cpo = &cpo
 set cpo&vim
@@ -21,6 +21,13 @@ endif
 
 if !exists('g:ttodo_nmap_important')
     let g:ttodo_nmap_important = '<Leader>!'   "{{{2
+endif
+
+
+if !exists('g:ttodo_enable_ftdetect')
+    " Set this variable to 1 in |vimrc| in order to enable the ttodo 
+    " filetype for todo.txt files.
+    let g:ttodo_enable_ftdetect = 0   "{{{2
 endif
 
 
@@ -40,13 +47,16 @@ endif
 "                   argument
 "   --done ........ Show done tasks
 "   --hidden ...... Show hidden tasks (h:1)
+"   --files=FILE1,FILE2... .. A comma-separated list of todo.txt files
 "   --path=PATH ... Search files in this path (default: use 
 "                   |g:ttodo#dirs|)
 "   --pattern=PAT . Search files matching this pattern (default: 
 "                   |g:ttodo#file_pattern|)
-"   --file_exclude_rx=RX ... Default: |g:ttodo#file_exclude_rx|
-"   --task_include_rx=RX ... Default: |g:ttodo#task_include_rx|
-"   --task_exclude_rx=RX ... Default: |g:ttodo#task_exclude_rx|
+"   --sort=FIELDS . default: |g:ttodo#sort|
+"   -A=RX, --file_include_rx=RX ... Default: |g:ttodo#file_include_rx|
+"   -R=RX, --file_exclude_rx=RX ... Default: |g:ttodo#file_exclude_rx|
+"   -i=RX, --task_include_rx=RX ... Default: |g:ttodo#task_include_rx|
+"   -x=RX, --task_exclude_rx=RX ... Default: |g:ttodo#task_exclude_rx|
 "
 " When the [!] is included show only important tasks.
 " 
