@@ -3,9 +3,16 @@
 
 This plugin provides the |:Ttodo| command that allow easy filtering and viewing 
 of todo.txt files (see http://todotxt.com) via |tlib#input#List()|. The plugin 
-supports searching across multiple todo.txt files.
+supports:
+
+    - search across multiple todo.txt files
+    - filter tasks with specific tags, lists etc.
+    - subtasks (outlines of complex tasks)
+    - hide tasks until a threshold date
+    - recurring tasks.
 
 Examples: >
+
     " Show all tasks; default map (|g:ttodo_nmap|): <Leader>1
     :Ttodo
 
@@ -21,48 +28,69 @@ Examples: >
     " Show tasks matching @Test
     :Ttodo @Test
 
-In order to use this plugin as a ftplugin, the vikitasks_vim plugin should be 
-installed. Users might also want to set |g:ttodo_enable_ftdetect| to 1 in their 
-|vimrc| file.
+    " By default, |:Ttodo| scans the todo.txt files in |g:ttodo#dirs|. Users 
+    " can also scan loaded buffers.
+    " Show tasks in the current buffer
+    :Ttodo --bufname=%
+
+    " Command-line options can be collected in preference sets (see 
+    " |g:ttodo#prefs|)
+    :Ttodo --pref=work
+
+In order to use this plugin as a ftplugin, users might also want to set 
+|g:ttodo_enable_ftdetect| to 1 in their |vimrc| file.
 
 If filetype is ttodo, the following default keymaps are enabled:
 
     <cr> ................. Add a new task;
-                           if either |g:ttodo#ftplugin#add_at_eof| is true or 
-                           the map was invoked with a count, add the task at 
-                           the end of file
+                           if |g:ttodo#ftplugin#add_at_eof| is true, add the 
+                           task at the end of file
     <c-cr> ............... Add a new task; copy any list and tags from the 
                            current task;
-                           if either |g:ttodo#ftplugin#add_at_eof| is true or 
-                           the map was invoked with a count, add the task at 
-                           the end of file
-
-If vikitasks_vim is installed (see |g:ttodo#use_vikitasks|), the following maps 
-are available too:
-
-    <LocalLeader>tx ...... Mark done
+                           if |g:ttodo#ftplugin#add_at_eof| is true, add the 
+                           task at the end of file
+    <s-cr> ............... Add a new subtask
+    <LocalLeader>tx ...... Mark "done"
     <LocalLeader>td ...... Mark due in N days
     <LocalLeader>tw ...... Mark due in N weeks
     <LocalLeader>tm ...... Mark due in N months
-    <LocalLeader>tp ...... Set priority
-    <LocalLeader>ta ...... Archive done items
+    <LocalLeader>ty ...... Set priority
+    <LocalLeader>ta ...... Archive completed items
+    <LocalLeader>tb ...... View, filter items in the current buffer
     <LocalLeader>tn ...... Add a note (the filename uses the first @list tag)
+    <LocalLeader>ti ...... Add a hopefully unique ID (an Adler32 hash)
 
-As a ftplugin, ttodo (in conjunction with vikitasks) supports the following 
-syntax/extensions to todo.txt (see also 
-https://github.com/ginatrapani/todo.txt-cli/wiki/The-Todo.txt-Format):
+If filetype is ttodo, the following commands are supported:
 
-    (A) .............. A priority as upper case letter (at the beginning of the 
+    |:Ttodoarchive| ...... Archive completed tasks in the current buffer
+    |:Ttodobuffer| ....... Show tasks in the current buffer only
+    |:Ttodonote| ......... Add a new note to the task at the cursor
+    |:Ttodosort| ......... Sort the tasks in the current buffer
+
+As a ftplugin, ttodo supports the following syntax/extensions to todo.txt (see 
+also https://github.com/ginatrapani/todo.txt-cli/wiki/The-Todo.txt-Format):
+
+    (A) DATE TASK .... A priority as upper case letter (at the beginning of the 
                        line)
-    x DATE text ...... A completed task (with completion date)
-    @list ............ list tag
-    +keyword ......... keyword tag
+    DATE TASK ........ A pending task
+    x DATE DATE TASK . A completed task (with completion date)
+    indented tasks ... A indented task is a subtask of the parent task; unless 
+                       `has_subtasks` is true, |:Ttodo| will only show tasks 
+                       with no open subtasks; this is similar to how the 
+                       outline addon handles subtasks (see also 
+                       https://github.com/samuelsnyder/outline-todo.txt)
+
+A TASK may contain the following tags:
+
+    @list ............ a "list" tag
+    +keyword ......... a "keyword" tag
+    h:1 .............. hidden task
     due:YYYY-MM-DD ... due dates
-    rec:+Nx .......... When marking a task a done, add a new task with a due 
+    rec:+Nx .......... When marking a task a "done", add a new task with a due 
                        date in N d(ays), w(eeks), m(onths), y(ears); with the 
                        leading '+' use the original due date; else use the 
-                       completion date (see also 
-                       |g:vikitasks#ft#todotxt#copy_rec_items|)
+                       completion date; this is similar to how the Simpletask 
+                       Android app handles `rec` tags
     t:YYYY-MM-DD ..... Hide the tasks until the given date
     t:-Nd ............ Hide the tasks until N days before the due date
 
@@ -101,7 +129,6 @@ The tlib_vim plugin is required:
 https://github.com/tomtom/tlib_vim
 
 Optional enhancement:
-- https://github.com/tomtom/vikitasks_vim for additional maps
 - https://github.com/tomtom/autolinker_vim for hyperlinking
 
 Also available via git: http://github.com/tomtom/ttodo_vim
@@ -119,33 +146,52 @@ Contents~
         g:ttodo_nmap_important ................ |g:ttodo_nmap_important|
         g:ttodo_enable_ftdetect ............... |g:ttodo_enable_ftdetect|
         :Ttodo ................................ |:Ttodo|
-        g:ttodo#dirs .......................... |g:ttodo#dirs|
+        :Ttodonew ............................. |:Ttodonew|
+        g:ttodo#fileargs ...................... |g:ttodo#fileargs|
         g:ttodo#file_pattern .................. |g:ttodo#file_pattern|
         g:ttodo#file_include_rx ............... |g:ttodo#file_include_rx|
         g:ttodo#file_exclude_rx ............... |g:ttodo#file_exclude_rx|
         g:ttodo#task_include_rx ............... |g:ttodo#task_include_rx|
         g:ttodo#task_exclude_rx ............... |g:ttodo#task_exclude_rx|
+        g:ttodo#task_hide_rx .................. |g:ttodo#task_hide_rx|
         g:ttodo#viewer ........................ |g:ttodo#viewer|
         g:ttodo#sort .......................... |g:ttodo#sort|
         g:ttodo#prefs ......................... |g:ttodo#prefs|
-        g:ttodo#default_pri ................... |g:ttodo#default_pri|
-        g:ttodo#default_due ................... |g:ttodo#default_due|
-        g:ttodo#default_t ..................... |g:ttodo#default_t|
-        g:ttodo#use_vikitasks ................. |g:ttodo#use_vikitasks|
-        g:ttodo#mapleader ..................... |g:ttodo#mapleader|
+        g:ttodo#new_task ...................... |g:ttodo#new_task|
+        g:ttodo#inbox ......................... |g:ttodo#inbox|
         g:ttodo#debug ......................... |g:ttodo#debug|
+        ttodo#GetDirs ......................... |ttodo#GetDirs()|
+        ttodo#GetCachedFileTasks .............. |ttodo#GetCachedFileTasks()|
         ttodo#ParseTask ....................... |ttodo#ParseTask()|
         ttodo#InitListBuffer .................. |ttodo#InitListBuffer()|
         ttodo#FiletypeDetect .................. |ttodo#FiletypeDetect()|
+        ttodo#SortBuffer ...................... |ttodo#SortBuffer()|
+        ttodo#NewTask ......................... |ttodo#NewTask()|
+        ttodo#FormatTags ...................... |ttodo#FormatTags()|
+        ttodo#MaybeAppend ..................... |ttodo#MaybeAppend()|
         g:ttodo#ftplugin#notef ................ |g:ttodo#ftplugin#notef|
         g:ttodo#ftplugin#note_prefix .......... |g:ttodo#ftplugin#note_prefix|
         g:ttodo#ftplugin#edit_note ............ |g:ttodo#ftplugin#edit_note|
         g:ttodo#ftplugin#add_at_eof ........... |g:ttodo#ftplugin#add_at_eof|
-        ttodo#ftplugin#WithVikitasks .......... |ttodo#ftplugin#WithVikitasks()|
         ttodo#ftplugin#Archive ................ |ttodo#ftplugin#Archive()|
         ttodo#ftplugin#ArchiveCurrentBuffer ... |ttodo#ftplugin#ArchiveCurrentBuffer()|
         ttodo#ftplugin#Note ................... |ttodo#ftplugin#Note()|
         ttodo#ftplugin#New .................... |ttodo#ftplugin#New()|
+        ttodo#ftplugin#MarkDone ............... |ttodo#ftplugin#MarkDone()|
+        ttodo#ftplugin#MarkDue ................ |ttodo#ftplugin#MarkDue()|
+        ttodo#ftplugin#SetPriority ............ |ttodo#ftplugin#SetPriority()|
+        ttodo#ftplugin#Agent .................. |ttodo#ftplugin#Agent()|
+        ttodo#ftplugin#AddId .................. |ttodo#ftplugin#AddId()|
+        n_<expr> .............................. |n_<expr>|
+        n_<expr> .............................. |n_<expr>|
+        n_<expr> .............................. |n_<expr>|
+        i_<expr> .............................. |i_<expr>|
+        i_<expr> .............................. |i_<expr>|
+        i_<expr> .............................. |i_<expr>|
+        :Ttodosort ............................ |:Ttodosort|
+        :Ttodoarchive ......................... |:Ttodoarchive|
+        :Ttodobuffer .......................... |:Ttodobuffer|
+        :Ttodonote ............................ |:Ttodonote|
 
 
 ========================================================================
@@ -166,25 +212,36 @@ g:ttodo_enable_ftdetect        (default: 0)
 :Ttodo[!] [ARGS] [INITIAL FILTER]
 
     ARGS is an argument list. The following arguments are supported:
-      --pref=PREF ... PREF is the name of a preferences set in 
-                      |g:ttodo#prefs| (default: "default")
-      --due=DATE .... show only tasks with due dates >= DATE. DATE can be
-                      - a DATE in the form YYYY-MM-DD or
-                      - a number of days or
-                      - a number of weeks as in "4w"
-                      (default: |g:ttodo#default_due|)
-      --pri=PRI ..... Show tasks with a priority matching [PRI] (see 
-                      |/[]|)
-      --undated ..... Show tasks with no due dates when using the due 
-                      argument
-      --done ........ Show done tasks
-      --hidden ...... Show hidden tasks (h:1)
+      --pref=PREF .... PREF is the name of a preferences set in 
+                       |g:ttodo#prefs| (default: "default")
+      --due=DATE ..... show only tasks with due dates >= DATE. DATE can be
+                       - a DATE in the form YYYY-MM-DD or
+                       - a number of days or
+                       - a number of weeks as in "4w"
+                       (default: |g:ttodo#default_due|)
+      --pri=PRI ...... Show tasks with a priority matching [PRI] (see 
+                       |/[]|)
+      --undated ...... Show tasks with no due dates when using the due 
+                       argument
+      --done ......... Show completed tasks
+      --hidden ....... Show hidden tasks, i.e. tasks with a "h:1" tag or 
+                       tasks matching |g:ttodo#task_hide_rx|
+      --bufnr=BUFNR .. A comma-separated list of buffer numbers (must be 
+                       numbers)
+      --bufname=EXPR . A buffer name expression (see |bufname()|)
       --files=FILE1,FILE2... .. A comma-separated list of todo.txt files
-      --path=PATH ... Search files in this path (default: use 
-                      |g:ttodo#dirs|)
-      --pattern=PAT . Search files matching this pattern (default: 
-                      |g:ttodo#file_pattern|)
-      --sort=FIELDS . default: |g:ttodo#sort|
+      --path=PATH .... Search files in this path (default: use 
+                       |g:ttodo#dirs|)
+      --pattern=PAT .. Search files matching this pattern (default: 
+                       |g:ttodo#file_pattern|)
+      --encoding=ENC . Encoding of the task files (default: &enc)
+      --sort=FIELDS .. default: |g:ttodo#sort|
+      --has_subtasks . Show tasks with open subtasks (i.e. indented tasks 
+                       below the parent task)
+      --has_lists=LIST1,.. .......... Show tasks with at least one 
+                                      matching list
+      --has_tags=TAG1,.. ............ Show tasks with at least one 
+                                      matching tag
       -A=RX, --file_include_rx=RX ... Default: |g:ttodo#file_include_rx|
       -R=RX, --file_exclude_rx=RX ... Default: |g:ttodo#file_exclude_rx|
       -i=RX, --task_include_rx=RX ... Default: |g:ttodo#task_include_rx|
@@ -197,20 +254,21 @@ g:ttodo_enable_ftdetect        (default: 0)
     |g:tlib#input#filter_mode|. The format of INITIAL FILTER depends on 
     the value of |g:ttodo#viewer|.
 
+                                                    *:Ttodonew*
+:Ttodonew
+
 
 ========================================================================
 autoload/ttodo.vim~
 
-                                                    *g:ttodo#dirs*
-g:ttodo#dirs                   (default: [])
-    List of directories where your todo.txt files reside.
-
-    If the todotxt plugin is used, |g:todotxt#dir| is added to the 
-    list.
+                                                    *g:ttodo#fileargs*
+g:ttodo#fileargs               (default: {})
+    A dictionary of {filename |regexp|: {additional args}} -- see 
+    |g:ttodo#dirs| for details on supported arguments.
 
                                                     *g:ttodo#file_pattern*
 g:ttodo#file_pattern           (default: '*todo.txt')
-    A glob pattern matching todo.txt files in |g:ttodo#dirs|.
+    A glob pattern matching todo.txt files.
 
                                                     *g:ttodo#file_include_rx*
 g:ttodo#file_include_rx        (default: '')
@@ -228,54 +286,70 @@ g:ttodo#task_include_rx        (default: '')
 g:ttodo#task_exclude_rx        (default: '')
     Exclude tasks matching this |regexp| from the list.
 
+                                                    *g:ttodo#task_hide_rx*
+g:ttodo#task_hide_rx           (default: '')
+
                                                     *g:ttodo#viewer*
-g:ttodo#viewer                 (default: exists('g:loaded_tlib') ? 'tlib' : ':cwindow')
+g:ttodo#viewer                 (default: 'tlib')
     Supported values:
       tlib ...... Use the tlib_vim plugin; the syntax of |:Ttodo|'s 
                   initial filter depends on the value of 
                   |g:tlib#input#filter_mode|
-      :COMMAND .. E.g. `:cwindow`. In this case initial filter is a 
-                  standard |regexp|.
+      :COMMAND .. E.g. `:cwindow` or `:CtrlPQuickfix`. In this case 
+                  initial filter is a standard |regexp|.
 
                                                     *g:ttodo#sort*
-g:ttodo#sort                   (default: 'pri,due,done,text')
+g:ttodo#sort                   (default: 'pri,due,done,lists,tags,idx')
 
                                                     *g:ttodo#prefs*
-g:ttodo#prefs                  (default: {'default': {'hidden': 0, 'done': 0}, 'important': {'hidden': 0, 'done': 0, 'undated': 1, 'due': '2w', 'pri': 'A-C'}})
+g:ttodo#prefs                  (default: {'default': {'hidden': 0, 'has_subtasks': 0, 'done': 0}, 'important': {'hidden': 0, 'has_subtasks': 0, 'done': 0, 'undated': 1, 'due': '2w', 'pri': 'A-C'}})
     A dictionary of configurations that can be invoked with the 
     `--pref=NAME` command line option from |:Ttodo|.
 
     If no preference is given, "default" is used.
 
-                                                    *g:ttodo#default_pri*
-g:ttodo#default_pri            (default: 'T')
-    If a task has no priortiy defined, assign this default priortiy.
+                                                    *g:ttodo#new_task*
+g:ttodo#new_task               (default: {'lists': ['inbox'], 'pri': 'B'})
+    Defintion for tasks added via |:Ttodonew|.
 
-                                                    *g:ttodo#default_due*
-g:ttodo#default_due            (default: strftime(g:tlib#date#date_format, localtime() + g:tlib#date#dayshift * 14))
-    If a task has no due date defined, assign this default due date.
-
-                                                    *g:ttodo#default_t*
-g:ttodo#default_t              (default: '-31d')
-    If a task has no threshold date defined, assign this default threshold date.
-
-                                                    *g:ttodo#use_vikitasks*
-g:ttodo#use_vikitasks          (default: exists('g:loaded_vikitasks') && g:loaded_vikitasks >= 102)
-
-                                                    *g:ttodo#mapleader*
-g:ttodo#mapleader              (default: '<LocalLeader>t')
+                                                    *g:ttodo#inbox*
+g:ttodo#inbox                  (default: 'todo.txt')
+    Tasks added by |:Ttodonew| will be added to this file in the 
+    default (i.e. the first) directory in |g:ttodo#dirs|.
 
                                                     *g:ttodo#debug*
 g:ttodo#debug                  (default: 0)
 
+                                                    *ttodo#GetDirs()*
+ttodo#GetDirs()
+
+                                                    *ttodo#GetCachedFileTasks()*
+ttodo#GetCachedFileTasks(args, filename, fileargs)
+
                                                     *ttodo#ParseTask()*
-ttodo#ParseTask(task)
+ttodo#ParseTask(task, file, ...)
 
                                                     *ttodo#InitListBuffer()*
 ttodo#InitListBuffer()
 
                                                     *ttodo#FiletypeDetect()*
 ttodo#FiletypeDetect(...)
+
+                                                    *ttodo#SortBuffer()*
+ttodo#SortBuffer(cmdargs)
+    If called with --sortseps=tags,lists, an empty line is inserted after 
+    each main (i.e. first) list or tag.
+
+    Sorting doesn't work for outlines, i.e. tasks with subtasks.
+
+                                                    *ttodo#NewTask()*
+ttodo#NewTask(cmdargs)
+
+                                                    *ttodo#FormatTags()*
+ttodo#FormatTags(prefix, lists)
+
+                                                    *ttodo#MaybeAppend()*
+ttodo#MaybeAppend(text, suffix)
 
 
 ========================================================================
@@ -292,13 +366,10 @@ g:ttodo#ftplugin#edit_note     (default: 'split')
 
                                                     *g:ttodo#ftplugin#add_at_eof*
 g:ttodo#ftplugin#add_at_eof    (default: 0)
-    If false, invoking the <cr> or <c-cr> map with a count will make 
-    ttodo add a new task at the end of the file. Otherwise the task 
-    will be added below the current line.
-    If true, the meaning of the count is reversed.
-
-                                                    *ttodo#ftplugin#WithVikitasks()*
-ttodo#ftplugin#WithVikitasks(fn, ...)
+    If true, the <cr> or <c-cr> map will make ttodo add a new task at 
+    the end of the file. Otherwise the task will be added below the 
+    current line.
+    Subtasks will always be added below the current line.
 
                                                     *ttodo#ftplugin#Archive()*
 ttodo#ftplugin#Archive(filename)
@@ -310,7 +381,62 @@ ttodo#ftplugin#ArchiveCurrentBuffer()
 ttodo#ftplugin#Note()
 
                                                     *ttodo#ftplugin#New()*
-ttodo#ftplugin#New(move, copytags)
+ttodo#ftplugin#New(move, copytags, mode, ...)
+
+                                                    *ttodo#ftplugin#MarkDone()*
+ttodo#ftplugin#MarkDone(count)
+
+                                                    *ttodo#ftplugin#MarkDue()*
+ttodo#ftplugin#MarkDue(unit, count)
+
+                                                    *ttodo#ftplugin#SetPriority()*
+ttodo#ftplugin#SetPriority(count)
+
+                                                    *ttodo#ftplugin#Agent()*
+ttodo#ftplugin#Agent(world, selected, fn, ...)
+
+                                                    *ttodo#ftplugin#AddId()*
+ttodo#ftplugin#AddId(count)
+
+
+========================================================================
+ftplugin/ttodo.vim~
+
+                                                    *n_<expr>*
+n_<expr> ... <cr> ttodo#ftplugin#New(g:ttodo#ftplugin#add_at_eof ? "G" : "", 0, "n")
+
+                                                    *n_<expr>*
+n_<expr> ... <c-cr> ttodo#ftplugin#New(g:ttodo#ftplugin#add_at_eof ? "G" : "", 1, "n")
+
+                                                    *n_<expr>*
+n_<expr> ... <s-cr> ttodo#ftplugin#New(">", 1, "n")
+
+                                                    *i_<expr>*
+i_<expr> ... <cr> ttodo#ftplugin#New(g:ttodo#ftplugin#add_at_eof ? "G" : "", 0, "i")
+
+                                                    *i_<expr>*
+i_<expr> ... <c-cr> ttodo#ftplugin#New(g:ttodo#ftplugin#add_at_eof ? "G" : "", 1, "i")
+
+                                                    *i_<expr>*
+i_<expr> ... <s-cr> ttodo#ftplugin#New(">", 1, "i")
+
+                                                    *:Ttodosort*
+:Ttodosort
+    Sort the tasks in the current buffer.
+
+    Sorting task outlines (i.e. subtasks) is not supported.
+
+                                                    *:Ttodoarchive*
+:Ttodoarchive
+    Archive completed tasks in the current buffer.
+
+                                                    *:Ttodobuffer*
+:Ttodobuffer
+    View the tasks in the current buffer.
+
+                                                    *:Ttodonote*
+:Ttodonote
+    Add a new task to the task at the cursor.
 
 
 
